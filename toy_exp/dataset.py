@@ -172,9 +172,9 @@ def main():
     dataset = get_datasets(ratios=ratios,
                  tgt_funcs = [L1, L2, L3, L4],
                  x_min = -10, x_max = 10,
-                 num_sample_train = 50000,
+                 num_sample_train = 1000000,
                  num_sample_tgt = 5000,
-                 subset_size = 10000)
+                 subset_size = 100000)
 
     train_dataset_D1 = dataset['train']['D1']
     train_dataset_D2 = dataset['train']['D2']

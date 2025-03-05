@@ -121,7 +121,8 @@ class ToyTrainer:
         self.optimizer.zero_grad()
         X, y = X.to(self.device), y.to(self.device)        
         outputs = self.model(X)
-        loss = self.loss_fn(outputs, y)        
+        # loss = self.loss_fn(outputs, y)        
+        loss = self.loss_fn(outputs, y.view(-1, 1))
         
         loss.backward()
         self.optimizer.step()
@@ -289,7 +290,7 @@ if __name__ == '__main__':
     
     train_weights = [0., 0., 0., 1.0, 0., 0.]
     tgt_weights = [0.5, 0.5]
-    valid_weights = [0.2,0.2]
+    valid_weights = [0.5,0.5]
     data_config = ToyDataArguments()
     train_dataset_ls, tgt_dataset_ls, val_dataset_ls = load_data(data_config)
     mix_train_loader = interleave_dataloader(train_dataset_ls, train_weights,
@@ -311,7 +312,7 @@ if __name__ == '__main__':
         break
     
     print("=========== Trainer ===========")
-    model = MLP(hidden_dims=[128, 64, 64, 64, 32],
+    model = MLP(hidden_dims=[512, 256, 128, 64],
                 dropout_rate=0.1)
     train_args = ToyTrainArguments()
     trainer = ToyTrainer(model,
@@ -324,8 +325,8 @@ if __name__ == '__main__':
                  mix_tgt_loader = mix_tgt_loader,
                  log_steps = 1000,
                  eval_steps = 1000,
-                 save_steps = 50000,
+                 save_steps = 200000,
                  output_dir="/scratch/homes/sfan/multi_doge/toy_exp/exp/dummy")
-    trainer.train(num_steps=50000)
+    trainer.train(num_steps=200000)
     # import pdb
     # pdb.set_trace()

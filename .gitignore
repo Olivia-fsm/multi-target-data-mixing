@@ -1,4 +1,9 @@
+exp/*
+wandb/*
 */exp/*
+*/wandb/*
 */plots/*
 */data/*
 */__pycache__/*
+*/*/__pycache__/*
+src/trainer_old.py

@@ -1,3 +1,6 @@
+import sys
+sys.path.append("/scratch/homes/sfan/multi_doge/src")
+
 import datasets
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
@@ -30,6 +33,7 @@ import huggingface_hub
 @dataclass
 class CausalLMOutputWithDomainIDs(CausalLMOutputWithCrossAttentions):
     domain_ids: Optional[torch.LongTensor] = None
+    log_loss: Optional[torch.FloatTensor] = None # logarithm of scalar loss value
     reference_pertoken_loss: Optional[torch.FloatTensor] = None  # corresponds to uniq_domain_ids
     pertoken_loss: Optional[torch.FloatTensor] = None  # corresponds to uniq_domain_ids
     token_mask: Optional[torch.FloatTensor] = None  # 1.0 for tokens that are not padding
@@ -108,7 +112,7 @@ class ModelArguments:
             )
 
 def get_model_from_config(model_args:ModelArguments,
-                          doge=False,
+                          reweight=False,
                           ref_model_path=None,):
     config_kwargs = {
         "cache_dir": model_args.cache_dir,
@@ -126,15 +130,16 @@ def get_model_from_config(model_args:ModelArguments,
             print(f"Overriding config: {model_args.config_overrides}")
             config.update_from_string(model_args.config_overrides)
             print(f"New config: {config}")
-    if doge:
+            
+    if reweight:
         if ref_model_path is not None:
-            return GPT2DoGE(config).from_pretrained(ref_model_path), config
-        return GPT2DoGE(config), config
+            return GPTForReweight(config).from_pretrained(ref_model_path), config
+        return GPTForReweight(config), config
 
     return GPT2LMHeadModel(config), config
 
 
-class GPT2DoGE(GPT2LMHeadModel):
+class GPTForReweight(GPT2LMHeadModel):
 
     def __init__(self, config):
         super().__init__(config)
@@ -291,9 +296,11 @@ class GPT2DoGE(GPT2LMHeadModel):
             output = (lm_logits, None, fwd_output.hidden_states, None, domain_ids, pertoken_loss, token_mask)
             return ((loss,) + output) if loss is not None else output
 
+        log_loss = torch.log(loss)
         out_hidden_states = fwd_output.hidden_states
         return CausalLMOutputWithDomainIDs(
             loss=loss,
+            log_loss=log_loss,
             logits=lm_logits,
             past_key_values=None,
             hidden_states=out_hidden_states,
@@ -303,5 +310,43 @@ class GPT2DoGE(GPT2LMHeadModel):
             token_mask=token_mask)
 
 ## test ##
-# model_config = ModelArguments()
-# doge_model_gpt2, doge_config = get_model_from_config(model_config, doge=True)
+if __name__ == '__main__':
+    from data import DataTrainingArguments, get_train_eval_datasets, get_data_collator, interleave_dataloader, individual_dataloader
+    from accelerate import Accelerator
+    
+    accelerator = Accelerator()
+    data_config = DataTrainingArguments(dataset='slim_ood-logiqa-piqa-arc_easy-arc_challenge-hellaswag-sciq',
+                                        max_train_samples=10000,
+                                        max_eval_samples=5000)
+    individual_train_ds, individual_tgt_ds, individual_val_ds, domain_config, tokenizer = get_train_eval_datasets(data_config=data_config,
+                                                            verbose=True,)
+    data_collator=get_data_collator(tokenizer, do_padding=False, max_length=512)
+    train_loader = interleave_dataloader(individual_train_ds, domain_config.train_dw,
+                          batch_size = 4,
+                          num_worker = 0,
+                          data_collator=data_collator)
+    tgt_loader = interleave_dataloader(individual_tgt_ds, domain_config.tgt_dw,
+                          batch_size = 4,
+                          num_worker = 0,
+                          data_collator=data_collator)
+    val_loader = individual_dataloader(individual_val_ds,
+                          batch_size = 4,
+                          num_worker = 0,
+                          data_collator=data_collator)
+    
+    for train_batch in train_loader:
+        print(train_batch)
+        break
+    
+    for val_batch in val_loader:
+        print(val_batch)
+        break
+    
+    model_config = ModelArguments()
+    rw_model_gpt2, rw_config = get_model_from_config(model_config, reweight=True)
+    
+    for train_batch in train_loader:
+        output = rw_model_gpt2(**train_batch)
+        break
+    import pdb
+    pdb.set_trace()
