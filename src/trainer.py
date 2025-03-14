@@ -188,6 +188,7 @@ import sys
 sys.path.append("/scratch/homes/sfan/multi_doge/src")
 from models import CausalLMOutputWithDomainIDs, ModelArguments, get_model_from_config, GPTForReweight
 from schedulers import get_scheduler_extended
+from ema import EMATracker
 
 @dataclass
 class FullTrainingArguments(TrainingArguments):
@@ -196,10 +197,10 @@ class FullTrainingArguments(TrainingArguments):
             metadata={"help": "The final learning rate of the learning rate scheduler."},
     )
     reweight_train: str = field(
-        default="doge", metadata={"help": "Reweighting training domains. [doge; doremi; None: uniform.]"}
+        default="doge", metadata={"help": "Reweighting training domains. [doge; doge_ema; doremi; None: uniform.]"}
     )
     reweight_tgt: str = field(
-        default="map", metadata={"help": "Reweighting target domains. [map; xx_grad: manipulate graduents; None: fixed.]"}
+        default="map", metadata={"help": "Reweighting target domains. [map; map_gap; map_ema; xx_grad: manipulate graduents; None: fixed.]"}
     )
     reweight_train_iters: int = field(
         default=10, metadata={"help": "Frequency of training domains reweighting."}
@@ -240,6 +241,10 @@ class FullTrainingArguments(TrainingArguments):
     dw_min: float = field(
         default=0.00,
         metadata={"help": "Score clip lower bound (*lr_t)."}
+    )
+    ema_beta: float = field(
+        default=0.9,
+        metadata={"help": "beta for ema update."}
     )
     compute_pertoken_losses: bool = field(
         default=True, metadata={"help": "Compute all domain losses at once."}
@@ -331,6 +336,14 @@ class MAPTrainer(Trainer):
         print(f'Training for {self.args.max_steps} Steps')
         print(f"-> Output dir: {self.args.output_dir}")
         
+        self.ema_beta = self.args.ema_beta
+        self.train_tracker_dict = {name:EMATracker(self.ema_beta, 
+                                                   save_dir=self.args.output_dir,
+                                                   name=name) for name in self.train_domains}
+        self.tgt_tracker_dict = {name:EMATracker(self.ema_beta, 
+                                                 save_dir=self.args.output_dir,
+                                                 name=name) for name in self.tgt_domains}
+        
         if self.ref_model is not None:
             print("** Reference Model **")
             print(self.ref_model)
@@ -353,6 +366,7 @@ class MAPTrainer(Trainer):
         self.get_individual_tgt_dataloader()
         self.get_train_dataloader()
         self.get_tgt_dataloader()
+        
            
     def reload_weights(self):
         if os.path.exists(self.dw_save_path):
@@ -368,7 +382,7 @@ class MAPTrainer(Trainer):
             print(f'Resume train/tgt domain weights from step [{self.train_dw_update_steps}|{self.tgt_dw_update_steps}]...')
             print('==============================')
             print('Last-step Train Domain Weights:', self.train_dw)
-            print('Last-step Target TaskDomain Weights:', self.tgt_dw)
+            print('Last-step Target (Task) Domain Weights:', self.tgt_dw)
             print('Average Train Domain Weights:', self.avg_train_dw / self.train_dw_update_steps)
             print('Average Target Task Weights:', self.avg_tgt_dw / self.tgt_dw_update_steps)
             print('==============================')
@@ -789,7 +803,10 @@ class MAPTrainer(Trainer):
         self.model.zero_grad()
         return grad_vec_dict
     
-    def get_domain_grad(self, individual_inputs, domain_id=None, get_log_grad=False):
+    def get_domain_grad(self, individual_inputs, 
+                        domain_id=None, 
+                        get_log_grad=False,
+                        return_loss=False):
         if domain_id is None:
             domain_inputs = individual_inputs
         else:
@@ -802,6 +819,9 @@ class MAPTrainer(Trainer):
         # compute gradient
         # domain_grad = self.get_grad_forward(loss_value, flatten=True, return_dict=False)
         domain_grad = self.get_grad_backward(loss_value, flatten=True, return_dict=False)
+        
+        if return_loss:
+            return loss_value.detach().cpu().item(), domain_grad
         return domain_grad
     
     # reweight train domains and target tasks
@@ -813,7 +833,8 @@ class MAPTrainer(Trainer):
         # TODO: implement doge with re-sampling
         # tgt_input = mix_tgt_loader.__next__()
         num_batches = self.reweight_batch_size // self.reweight_mini_batch_size
-        get_tgt_log_grad = (self.reweight_tgt == "map")
+        # get_tgt_log_grad = (self.reweight_tgt == "map")
+        get_tgt_log_grad = (self.reweight_tgt == "map") or (self.reweight_tgt == "map_ema")
         tgt_inputs, _ = self.get_batch_samples(mix_tgt_iter, num_batches)
         tgt_grad = None
         for tgt_input in tgt_inputs:
@@ -823,9 +844,11 @@ class MAPTrainer(Trainer):
                 tgt_grad = self.get_domain_grad(tgt_input, domain_id=None, get_log_grad=get_tgt_log_grad)
         individual_train_inputs = individual_train_loader.__next__()
         log_train_dw = torch.zeros_like(self.train_dw)
+        domain_losses = []
         for idx, domain_id in enumerate(self.train_ids):
             domain_name = self.idx2domain[domain_id]
-            domain_grad = self.get_domain_grad(individual_train_inputs, domain_id=idx, get_log_grad=False)
+            domain_loss, domain_grad = self.get_domain_grad(individual_train_inputs, domain_id=idx, get_log_grad=False, return_loss=True)
+            domain_losses.append(domain_loss)
             wandb_log_dict[f'grad_norm/{domain_name}'] = domain_grad.norm().item()
             self.train_dw_update_counter[domain_id] += len(individual_train_inputs[idx])
             wandb_log_dict[f'train_reweight_count/{domain_name}'] = self.train_dw_update_counter[domain_id]
@@ -840,6 +863,12 @@ class MAPTrainer(Trainer):
             domain_name = self.idx2domain[domain_id]
             wandb_log_dict[f'avg_train_dw/{domain_name}'] = self.avg_train_dw[idx].item() / self.train_dw_update_steps
             wandb_log_dict[f'train_dw/{domain_name}'] = self.train_dw[idx].item()
+            ema_domain_loss = self.train_tracker_dict[domain_name].update(step=self.state.global_step,
+                                                                          loss=domain_losses[idx],
+                                                                          score=self.train_dw[idx].item())
+            wandb_log_dict[f'reweight_loss/{domain_name}'] = domain_losses[idx],
+            wandb_log_dict[f'ema_reweight_loss/{domain_name}'] = ema_domain_loss
+            self.train_tracker_dict[domain_name].save()
         
         self.write_weights(last_train_dw=self.train_dw, 
                            avg_train_dw=self.avg_train_dw/self.train_dw_update_steps,
@@ -871,12 +900,24 @@ class MAPTrainer(Trainer):
                 train_grad = self.get_domain_grad(train_input, domain_id=None, get_log_grad=False)
         individual_tgt_inputs = individual_tgt_loader.__next__()
         log_tgt_dw = torch.zeros_like(self.tgt_dw)
+        
         for idx, domain_id in enumerate(self.tgt_ids):
             domain_name = self.idx2domain[domain_id]
-            domain_grad = self.get_domain_grad(individual_tgt_inputs, domain_id=idx, get_log_grad=get_tgt_log_grad)
+            domain_loss, domain_grad = self.get_domain_grad(individual_tgt_inputs, 
+                                                            domain_id=idx, 
+                                                            get_log_grad=get_tgt_log_grad, 
+                                                            return_loss=True)
             wandb_log_dict[f'grad_norm/{domain_name}'] = domain_grad.norm().item()
             self.tgt_dw_update_counter[domain_id] += len(individual_tgt_inputs[idx])
             wandb_log_dict[f'tgt_reweight_count/{domain_name}'] = self.tgt_dw_update_counter[domain_id]
+            
+            ema_domain_loss = self.tgt_tracker_dict[domain_name].update(step=self.state.global_step,
+                                                                        loss=domain_loss,
+                                                                        score=None)
+            wandb_log_dict[f'reweight_loss/{domain_name}'] = domain_loss
+            wandb_log_dict[f'ema_reweight_loss/{domain_name}'] = ema_domain_loss
+            if self.reweight_tgt == "map_ema":
+                domain_grad = domain_grad / ema_domain_loss
             log_tgt_dw[idx] = torch.log(self.tgt_dw[idx]) - lr_value * (domain_grad @ train_grad) / self.mu_tgt
         del domain_grad
         del train_grad
@@ -888,6 +929,9 @@ class MAPTrainer(Trainer):
             domain_name = self.idx2domain[domain_id]
             wandb_log_dict[f'avg_tgt_dw/{domain_name}'] = self.avg_tgt_dw[idx].item() / self.tgt_dw_update_steps
             wandb_log_dict[f'tgt_dw/{domain_name}'] = self.tgt_dw[idx].item()
+            self.tgt_tracker_dict[domain_name].update_score(step=self.state.global_step,
+                                                            score=self.tgt_dw[idx].item())
+            self.tgt_tracker_dict[domain_name].save()
         
         self.write_weights(last_train_dw=self.train_dw, 
                            avg_train_dw=self.avg_train_dw/self.train_dw_update_steps,
@@ -1488,12 +1532,12 @@ class MAPTrainer(Trainer):
                         break
                 
                 lr_t = self.lr_scheduler.get_last_lr()[0] if self.lr_scheduler is not None else 1e-4
-                if self.reweight_train_iters > 0 and (update_step+1) % self.reweight_train_iters == 0:
+                if self.reweight_train_iters > 0 and (self.state.global_step+1) % self.reweight_train_iters == 0:
                     self.domain_reweight_step(individual_train_loader=self.individual_train_loader,
                                               mix_tgt_iter=epoch_mix_tgt_iter,
                                               lr_value=lr_t)
 
-                if self.reweight_tgt_iters > 0 and (update_step+1) % self.reweight_tgt_iters == 0:
+                if self.reweight_tgt_iters > 0 and (self.state.global_step+1) % self.reweight_tgt_iters == 0:
                     self.tgt_reweight_step(individual_tgt_loader=self.individual_tgt_loader,
                                            mix_train_iter=epoch_mix_train_iter,
                                            lr_value=lr_t)
