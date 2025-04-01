@@ -71,10 +71,10 @@ class LinearWarmupDecay(LRScheduler):
     """
     LR with linear warmup and linear decay to some end LR.
     """
-    def __init__(self, optimizer, num_warmup_steps, num_training_steps, lr_start=1e-7, lr_end=0, last_epoch=-1, verbose=False, decay_rate=0.2):
+    def __init__(self, optimizer, num_warmup_steps, num_training_steps, lr_start=1e-7, lr_end=0, last_epoch=-1, verbose=False, decay_rate=0.1):
         self.num_warmup_steps = num_warmup_steps
         self.num_training_steps = num_training_steps
-        self.num_decay_steps = min(5000, int(decay_rate * num_training_steps))
+        self.num_decay_steps = int(decay_rate * num_training_steps)
         self.lr_start = lr_start
         self.lr_end = lr_end
         super().__init__(optimizer, last_epoch, verbose)

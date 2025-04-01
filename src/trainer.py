@@ -200,7 +200,7 @@ class FullTrainingArguments(TrainingArguments):
         default="doge", metadata={"help": "Reweighting training domains. [doge; doge_ema; doremi; None: uniform.]"}
     )
     reweight_tgt: str = field(
-        default="map", metadata={"help": "Reweighting target domains. [map; map_gap; map_ema; xx_grad: manipulate graduents; None: fixed.]"}
+        default="map", metadata={"help": "Reweighting target domains. [map; map_gap; map_ema; map_star; xx_grad: manipulate graduents; None: fixed.]"}
     )
     reweight_train_iters: int = field(
         default=10, metadata={"help": "Frequency of training domains reweighting."}

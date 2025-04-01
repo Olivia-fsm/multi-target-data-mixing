@@ -30,7 +30,7 @@ from trainer import FullTrainingArguments
 args_parser = argparse.ArgumentParser()
 # DomainConfigArguments
 args_parser.add_argument('--config_json', default='/mloraw1/sfan/doge/config/doge_82.json', type=str)
-args_parser.add_argument('--wandb_proj', default='multi-target-reweight_684M-Slim6B', type=str)
+args_parser.add_argument('--wandb_proj', default='multi-target-reweight_684M', type=str)
 args_parser.add_argument('--wandb_run', default=None, type=str)
 
 def get_run_name(base_name="", training_args={}):
