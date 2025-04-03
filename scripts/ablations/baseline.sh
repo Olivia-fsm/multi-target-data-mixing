@@ -13,5 +13,3 @@ torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T4-gpt_bas
 torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T5-gpt_base.json --wandb_proj multi-target-reweight --wandb_run ABLATION-T5
 torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T6-gpt_base.json --wandb_proj multi-target-reweight --wandb_run ABLATION-T6
 torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T7-gpt_base.json --wandb_proj multi-target-reweight --wandb_run ABLATION-T7
-torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T8-gpt_base.json --wandb_proj multi-target-reweight --wandb_run ABLATION-T8
-torchrun --nproc-per-node 2 src/run.py --config_json config/ablations/T9-gpt_base.json --wandb_proj multi-target-reweight --wandb_run ABLATION-T9

@@ -109,7 +109,7 @@ def main():
         ddp_backend = "nccl"
     else:
         ddp_backend = None
-    ddp_backend = None
+
     training_args.local_rank = local_rank
     training_args.ddp_backend = ddp_backend
     print(f'{local_rank = }| { local_world_size = }')
