@@ -24,7 +24,6 @@ def parse_metrics(output):
     metrics = {}
     task_results = {}
     
-    # Use regex to extract the task name from the first line
     task_match = re.search(r'=== Evaluating task: ([^\s]+) ===', output)
     current_task = task_match.group(1) if task_match else "unknown"
     
@@ -79,14 +78,11 @@ def parse_metrics(output):
 def main():
     args = parser.parse_args()
     
-    # Parse tasks
     tasks = args.tasks.split(',')
     
-    # Results storage
     task_results = {}
     all_metrics = {}
     
-    # Evaluate each task
     for task in tasks:
         print(f"\n=== Evaluating task: {task} ===")
         
@@ -105,14 +101,11 @@ def main():
         
         print("Command executed:", " ".join(result.args))
         
-        # Process output
         output = result.stdout
         print(output)
         
-        # Extract metrics
         metrics, task_result = parse_metrics(output)
         
-        # Store results
         if metrics:
             all_metrics[task] = metrics
             if task_result is not None:
@@ -123,13 +116,11 @@ def main():
         else:
             print(f"No metrics found for {task}")
         
-        # Print all metrics found
         if metrics:
             print(f"All metrics for {task}:")
             for key, value in metrics.items():
                 print(f"  {key}: {value:.4f}")
     
-    # Summarize results
     print("\n=== SUMMARY OF RESULTS ===")
     print("{:<15} {:<10}".format("Task", "Performance"))
     print("-" * 25)
@@ -143,7 +134,6 @@ def main():
         print("-" * 25)
         print("{:<15} {:<10.4f}".format("Average", avg_performance))
     
-    # Save results to file
     with open(f"{results_dir}/model_evaluation_results.md", "w") as f:
         f.write("# Model Evaluation Results\n\n")
         f.write(f"Model checkpoint: {args.model_path}\n")
@@ -170,7 +160,7 @@ def main():
             
             f.write("\n")
     
-    print(f"\nResults saved to {results_dir}/model_evaluation_results.md")
+    print(f"\nResults saved to {results_dir}/model_evaluation_results_{args.model_path.split('/')[-1]}.md")
 
 if __name__ == "__main__":
     main()
