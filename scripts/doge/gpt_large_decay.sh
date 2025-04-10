@@ -8,5 +8,5 @@ pip install --upgrade wandb
 # python src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_base.json --wandb_run DOGE-6tasks-125M
 # python src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_base_dw50.json --wandb_run DOGE-6tasks-125M
 # torchrun --nproc-per-node 4 src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_large_dw100.json --wandb_run DOGE-6tasks-684M
-torchrun --nproc_per_node 4 src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_large_dw100_decay.json --wandb_run DOGE-8tasks-684M
+torchrun --nproc_per_node 2 src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_large_dw100_decay.json --wandb_run DOGE-8tasks-684M-new
 # python src/run.py --config_json /scratch/homes/sfan/multi_doge/config/doge/gpt_large_dw100.json --wandb_run DOGE-6tasks-684M

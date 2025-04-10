@@ -17,24 +17,21 @@ def get_wiki40b(subset='en', num_proc=40,
     tknzr = XLMTokenizer.from_pretrained('xlm-mlm-100-1280')
     """ https://huggingface.co/datasets/wiki40b
     """
-    # {
-    #     "text": ...,
-    #     "meta": {"url": "...", "timestamp": "...", "source": "...", "language": "...", ...},
-    #     "red_pajama_subset": "common_crawl" | "c4" | "github" | "books" | "arxiv" | "wikipedia" | "stackexchange"
-    # }
-    WIKI_40B_PATH = "/scratch/homes/sfan/multilingual-wiki-data/notebook/"
-    # WIKI_40B_PATH = os.path.join(os.path.dirname(__file__), "/scratch/homes/pagliard/curriculum/src/data/datasets/slim_redpajama")
+    WIKI_40B_PATH = "/scratch/homes/sfan/multilingual-wiki-data/"
     SUBSET_PATH = os.path.join(WIKI_40B_PATH, subset)
     train_path = os.path.join(SUBSET_PATH, f"{subset}_train.bin")
-    # val_path = os.path.join(SUBSET_PATH, f"{subset}_validation.bin")
     test_path = os.path.join(SUBSET_PATH, f"{subset}_test.bin")
     
-    train_data = np.memmap(train_path, dtype=np.uint16, mode='r')
-    # val_data = np.memmap(val_path, dtype=np.uint16, mode='r')
-    test_data = np.memmap(test_path, dtype=np.uint16, mode='r')
+    train_data = np.memmap(train_path, dtype=np.int32, mode='r')
+    test_data = np.memmap(test_path, dtype=np.int32, mode='r')
     print(f'Subset {subset}: train[{len(train_data)}] | val[{len(test_data)}]')
     if return_torch:
         train_data = torch.tensor(np.array(train_data, dtype=np.int32))
-        # val_data = torch.tensor(np.array(val_data, dtype=np.int32))
         test_data = torch.tensor(np.array(test_data, dtype=np.int32))
-    return {'train': train_data, 'val': test_data, 'test': test_data}
+    return {'train': train_data, 'val': test_data}
+
+
+if __name__ == "__main__":
+    da_data = get_wiki40b("en")
+    import pdb
+    pdb.set_trace()

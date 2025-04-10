@@ -169,7 +169,7 @@ def main():
         wandb_run_name=wandb_run_name,
         output_dir=output_dir,
         ref_model=ref_model,
-        callbacks=[TqdmCallback],
+        # callbacks=[TqdmCallback],
     )
 
     if training_args.do_train:

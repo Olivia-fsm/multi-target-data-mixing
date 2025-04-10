@@ -1,4 +1,6 @@
 exp/*
+exp_decay/*
+exp_decay_new/*
 wandb/*
 */exp/*
 */wandb/*
@@ -8,3 +10,10 @@ wandb/*
 */*/__pycache__/*
 src/trainer_old.py
 media/*
+toy_exp/*
+toy_mtl/*
+eval_results/*
+scripts/*
+config/decay/*
+config/multilingual/*
+*/*.ipynb

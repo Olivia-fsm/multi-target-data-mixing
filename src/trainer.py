@@ -196,6 +196,10 @@ class FullTrainingArguments(TrainingArguments):
             default=1e-4,
             metadata={"help": "The final learning rate of the learning rate scheduler."},
     )
+    decay_rate: float = field(
+            default=0.1,
+            metadata={"help": "The decay ratio of WSD lr scheduler."},
+    )
     reweight_train: str = field(
         default="doge", metadata={"help": "Reweighting training domains. [doge; doge_ema; doremi; None: uniform.]"}
     )
@@ -234,14 +238,6 @@ class FullTrainingArguments(TrainingArguments):
     ref_model: str = field(
         default=None, metadata={"help": "path to pretrained reference model."}
     )   # use for DoReMi or golden DRO
-    dw_max: float = field(
-        default=5.0,
-        metadata={"help": "Score clip upper bound (*lr_t)."}
-    )
-    dw_min: float = field(
-        default=0.00,
-        metadata={"help": "Score clip lower bound (*lr_t)."}
-    )
     ema_beta: float = field(
         default=0.9,
         metadata={"help": "beta for ema update."}
@@ -315,8 +311,6 @@ class MAPTrainer(Trainer):
         
         self.mu_train = self.args.mu_train
         self.mu_tgt = self.args.mu_tgt
-        self.dw_min = self.args.dw_min
-        self.dw_max = self.args.dw_max
         self.compute_pertoken_losses = self.args.compute_pertoken_losses
         if grad_acc is not None:
             self.args.gradient_accumulation_steps = grad_acc
@@ -344,6 +338,13 @@ class MAPTrainer(Trainer):
                                                  save_dir=self.args.output_dir,
                                                  name=name) for name in self.tgt_domains}
         
+        self.train_dw_update_steps = 0
+        self.tgt_dw_update_steps = 0
+        self.train_dw_update_counter = {i:0 for i in range(len(self.domain_list))}
+        self.tgt_dw_update_counter = {i:0 for i in range(len(self.domain_list))}
+        self.dw_save_path = os.path.join(self.args.output_dir, 'dw_config.pkl')
+        self.reload_weights()
+        
         if self.ref_model is not None:
             print("** Reference Model **")
             print(self.ref_model)
@@ -355,12 +356,6 @@ class MAPTrainer(Trainer):
         for idx,i in enumerate(self.tgt_ids):
             print(f'{i}-{self.idx2domain[i]}|{self.tgt_dw[idx]}')
         print('==============================')
-        self.train_dw_update_steps = 0
-        self.tgt_dw_update_steps = 0
-        self.train_dw_update_counter = {i:0 for i in range(len(self.domain_list))}
-        self.tgt_dw_update_counter = {i:0 for i in range(len(self.domain_list))}
-        self.dw_save_path = os.path.join(self.args.output_dir, 'dw_config.pkl')
-        self.reload_weights()
         
         self.get_individual_train_dataloader()
         self.get_individual_tgt_dataloader()
@@ -372,12 +367,12 @@ class MAPTrainer(Trainer):
         if os.path.exists(self.dw_save_path):
             with open(self.dw_save_path, 'rb') as trg:
                 reload_dw_cfg = pickle.load(trg)
-            self.train_dw = reload_dw_cfg['train_dw']
-            self.tgt_dw = reload_dw_cfg['tgt_dw']
+            self.train_dw = reload_dw_cfg['last_train_dw']
+            self.tgt_dw = reload_dw_cfg['last_tgt_dw']
             self.train_dw_update_steps = reload_dw_cfg['train_dw_update_steps']
             self.tgt_dw_update_steps = reload_dw_cfg['tgt_dw_update_steps']
-            self.avg_train_dw = reload_dw_cfg['train_dw'] * self.train_dw_update_steps
-            self.avg_tgt_dw = reload_dw_cfg['tgt_dw'] * self.tgt_dw_update_steps
+            self.avg_train_dw = reload_dw_cfg['avg_train_dw'] * self.train_dw_update_steps
+            self.avg_tgt_dw = reload_dw_cfg['avg_tgt_dw'] * self.tgt_dw_update_steps
             
             print(f'Resume train/tgt domain weights from step [{self.train_dw_update_steps}|{self.tgt_dw_update_steps}]...')
             print('==============================')
@@ -397,7 +392,10 @@ class MAPTrainer(Trainer):
                       last_tgt_dw,
                       avg_tgt_dw,
                       train_dw_update_steps,
-                      tgt_dw_update_steps):
+                      tgt_dw_update_steps,
+                      save_path=None):
+        if save_path is None:
+            save_path = self.dw_save_path
         dw_config_dict = {k:v for k,v in self.domain_config.__dict__.items()}
         dw_config_dict['last_train_dw'] = last_train_dw
         dw_config_dict['avg_train_dw'] = avg_train_dw
@@ -405,7 +403,7 @@ class MAPTrainer(Trainer):
         dw_config_dict['avg_tgt_dw'] = avg_tgt_dw
         dw_config_dict['train_dw_update_steps'] = train_dw_update_steps
         dw_config_dict['tgt_dw_update_steps'] = tgt_dw_update_steps
-        with open(self.dw_save_path, 'wb') as trg:
+        with open(save_path, 'wb') as trg:
             pickle.dump(dw_config_dict, trg)
         
     def create_scheduler(self, num_training_steps, optimizer=None):
@@ -416,19 +414,31 @@ class MAPTrainer(Trainer):
         Args:
             num_training_steps (int): The number of training steps to do.
         """
-        if self.lr_scheduler is None:
-            if self.args.lr_scheduler_name is not None:
-                lr_scheduler_name = self.args.lr_scheduler_name
-            else:
-                lr_scheduler_name = self.args.lr_scheduler_type
+        # if self.lr_scheduler is None:
+        if self.args.lr_scheduler_name is not None:
+            lr_scheduler_name = self.args.lr_scheduler_name
+        else:
+            lr_scheduler_name = self.args.lr_scheduler_type
+        
+        if lr_scheduler_name == "linear_decay":
+            self.lr_scheduler = get_scheduler_extended(
+                lr_scheduler_name,
+                optimizer=self.optimizer if optimizer is None else optimizer,
+                num_warmup_steps=self.args.get_warmup_steps(num_training_steps),
+                num_training_steps=int(self.args.decay_rate*num_training_steps),
+                lr_end=self.args.lr_end,
+                decay_rate=self.args.decay_rate
+            )
+        else:
             self.lr_scheduler = get_scheduler_extended(
                 lr_scheduler_name,
                 optimizer=self.optimizer if optimizer is None else optimizer,
                 num_warmup_steps=self.args.get_warmup_steps(num_training_steps),
                 num_training_steps=num_training_steps,
                 lr_end=self.args.lr_end,
+                decay_rate=self.args.decay_rate
             )
-            self._created_lr_scheduler = True
+        self._created_lr_scheduler = True
         return self.lr_scheduler
     
     def compute_loss(self, model, inputs, return_outputs=True, return_pertoken_losses=False):
@@ -939,6 +949,14 @@ class MAPTrainer(Trainer):
                            avg_tgt_dw=self.avg_tgt_dw/self.tgt_dw_update_steps,
                            train_dw_update_steps=self.train_dw_update_steps,
                            tgt_dw_update_steps=self.tgt_dw_update_steps)
+        if (self.state.global_step+1) % self.args.save_steps == 0:
+            self.write_weights(last_train_dw=self.train_dw, 
+                                avg_train_dw=self.avg_train_dw/self.train_dw_update_steps,
+                                last_tgt_dw=self.tgt_dw,
+                                avg_tgt_dw=self.avg_tgt_dw/self.tgt_dw_update_steps,
+                                train_dw_update_steps=self.train_dw_update_steps,
+                                tgt_dw_update_steps=self.tgt_dw_update_steps,
+                                save_path = os.path.join(f"{self.dw_save_path.split('.pkl')[0]}-{str(self.state.global_step)}.pkl"))
         
         self.tgt_loader.update_weights(new_weights=self.tgt_dw)
         logger.info("-> update tgt_dw: ", self.tgt_dw)

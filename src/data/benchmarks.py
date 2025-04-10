@@ -20,6 +20,8 @@ SCIQ_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/sciq/")
 HUMANEVAL_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/humaneval/")
 KODCODE_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/kodcode/")
 GSM8K_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/gsm8k/")
+MATHQA_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/mathqa/")
+MEDQA_DATA_PATH = os.path.join(os.path.dirname(__file__), "datasets/medqa/")
 
 
 def tokenize_with_pad(text, pad_to_multiple=512):
@@ -264,6 +266,154 @@ def get_gsm8k(num_proc=10, return_torch=False):
         'val_len': np.load(os.path.join(GSM8K_DATA_PATH, 'val.len')),
     }
     
+def get_mathqa(num_proc=10, return_torch=False):
+    """
+    Load and process the MATH-QA dataset.
+    Tokenize the text and store it in binary format for efficient loading.
+    """
+    if not os.path.exists(os.path.join(MATHQA_DATA_PATH, 'val.bin')):
+        os.makedirs(MATHQA_DATA_PATH, exist_ok=True)
+
+        # Load the MATH-QA dataset from Hugging Face Datasets
+        dataset = load_dataset("allenai/math_qa",trust_remote_code=True)
+        data_dict = {
+            'train': dataset["train"],
+            'val': dataset["test"],
+        }
+
+        def process(example, pad_to_multiple=512):
+            """
+            Tokenize the example text by encoding it into token IDs.
+            """
+            question = example['Problem']
+            choices = {d.strip()[0]:d.split(")")[-1].strip() for d in example['options'].split(",")}
+            answer = choices.get(example['correct'])
+            
+            concatenated_text = f"{question} {answer}"
+            # print(concatenated_text)
+            ids = tokenize_with_pad(text=concatenated_text,
+                                    pad_to_multiple=512)
+            return {'ids': ids, 'len': len(ids)}
+
+        # Tokenize and map the dataset
+        tokenized = {}
+        for split, dset in data_dict.items():
+            tokenized[split] = dset.map(
+                process,
+                remove_columns=['Problem', 'Rationale', 'options', 'correct', 'annotated_formula', 'linear_formula', 'category'],
+                desc=f"Tokenizing {split} split",
+                num_proc=num_proc
+            )
+
+        # Concatenate all the token IDs into one large binary file per split
+        for split, dset in tokenized.items():
+            # Save token IDs length
+            len_arr = np.array(dset['len'], dtype=np.uint16)
+            with open(os.path.join(MATHQA_DATA_PATH, f'{split}.len'), 'wb') as f:
+                np.save(f, len_arr)
+            # Total number of tokens
+            arr_len = np.sum(dset['len'])
+            filename = os.path.join(MATHQA_DATA_PATH, f'{split}.bin')
+            dtype = np.uint16
+            arr = np.memmap(filename, dtype=dtype, mode='w+', shape=(arr_len,))
+            total_batches = 10
+
+            idx = 0
+            for batch_idx in tqdm(range(total_batches), desc=f'Writing {filename}'):
+                batch = dset.shard(num_shards=total_batches, index=batch_idx, contiguous=True).with_format('numpy').to_dict()
+                arr_batch = np.concatenate(batch['ids'])
+                arr[idx: idx + len(arr_batch)] = arr_batch
+                idx += len(arr_batch)
+            arr.flush()
+    
+    # Load tokenized binary files for training, validation
+    train_data = np.memmap(os.path.join(MATHQA_DATA_PATH, 'train.bin'), dtype=np.uint16, mode='r')
+    val_data = np.memmap(os.path.join(MATHQA_DATA_PATH, 'val.bin'), dtype=np.uint16, mode='r')
+
+    if return_torch:
+        train_data = torch.tensor(np.array(train_data, dtype=np.uint16))
+        val_data = torch.tensor(np.array(val_data, dtype=np.uint16))
+    print(f'Benchmark MATHQA: train[{len(train_data)}] | val[{len(val_data)}]')
+    return {
+        'train': train_data,
+        'train_len': np.load(os.path.join(MATHQA_DATA_PATH, 'train.len')), 
+        'val': val_data, 
+        'val_len': np.load(os.path.join(MATHQA_DATA_PATH, 'val.len')),
+    }
+
+def get_medqa(num_proc=10, return_torch=False):
+    """
+    Load and process the MEDQA dataset.
+    Tokenize the text and store it in binary format for efficient loading.
+    """
+    if not os.path.exists(os.path.join(MEDQA_DATA_PATH, 'val.bin')):
+        os.makedirs(MEDQA_DATA_PATH, exist_ok=True)
+
+        # Load the MATH-QA dataset from Hugging Face Datasets
+        dataset = load_dataset("bigbio/med_qa",trust_remote_code=True)
+        data_dict = {
+            'train': dataset["train"],
+            'val': dataset["test"],
+        }
+
+        def process(example, pad_to_multiple=512):
+            """
+            Tokenize the example text by encoding it into token IDs.
+            """
+            question = example["question"]
+            answer = example["answer"]
+            
+            concatenated_text = f"{question} {answer}"
+            # print(concatenated_text)
+            ids = tokenize_with_pad(text=concatenated_text,
+                                    pad_to_multiple=512)
+            return {'ids': ids, 'len': len(ids)}
+
+        # Tokenize and map the dataset
+        tokenized = {}
+        for split, dset in data_dict.items():
+            tokenized[split] = dset.map(
+                process,
+                remove_columns=['meta_info', 'question', 'answer_idx', 'answer', 'options'],
+                desc=f"Tokenizing {split} split",
+                num_proc=num_proc
+            )
+
+        # Concatenate all the token IDs into one large binary file per split
+        for split, dset in tokenized.items():
+            # Save token IDs length
+            len_arr = np.array(dset['len'], dtype=np.uint16)
+            with open(os.path.join(MEDQA_DATA_PATH, f'{split}.len'), 'wb') as f:
+                np.save(f, len_arr)
+            # Total number of tokens
+            arr_len = np.sum(dset['len'])
+            filename = os.path.join(MEDQA_DATA_PATH, f'{split}.bin')
+            dtype = np.uint16
+            arr = np.memmap(filename, dtype=dtype, mode='w+', shape=(arr_len,))
+            total_batches = 10
+
+            idx = 0
+            for batch_idx in tqdm(range(total_batches), desc=f'Writing {filename}'):
+                batch = dset.shard(num_shards=total_batches, index=batch_idx, contiguous=True).with_format('numpy').to_dict()
+                arr_batch = np.concatenate(batch['ids'])
+                arr[idx: idx + len(arr_batch)] = arr_batch
+                idx += len(arr_batch)
+            arr.flush()
+    
+    # Load tokenized binary files for training, validation
+    train_data = np.memmap(os.path.join(MEDQA_DATA_PATH, 'train.bin'), dtype=np.uint16, mode='r')
+    val_data = np.memmap(os.path.join(MEDQA_DATA_PATH, 'val.bin'), dtype=np.uint16, mode='r')
+
+    if return_torch:
+        train_data = torch.tensor(np.array(train_data, dtype=np.uint16))
+        val_data = torch.tensor(np.array(val_data, dtype=np.uint16))
+    print(f'Benchmark MedQA: train[{len(train_data)}] | val[{len(val_data)}]')
+    return {
+        'train': train_data,
+        'train_len': np.load(os.path.join(MEDQA_DATA_PATH, 'train.len')), 
+        'val': val_data, 
+        'val_len': np.load(os.path.join(MEDQA_DATA_PATH, 'val.len')),
+    }
 
 def get_arc_easy(num_proc=10, return_torch=False):
     """
@@ -729,4 +879,6 @@ SUPPORTED_TASK_MAP = {"arc_easy": get_arc_easy,
                       "sciq": get_sciq,
                       "humaneval": get_humaneval,
                       "gsm8k": get_gsm8k,
-                      "kodcode": get_kodcode,}
+                      "kodcode": get_kodcode,
+                      "mathqa": get_mathqa,
+                      "medqa": get_medqa}
