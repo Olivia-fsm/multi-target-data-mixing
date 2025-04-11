@@ -23,7 +23,7 @@
     "reweight_train": "doge",
     "reweight_tgt": "map",
     "reweight_train_iters": 100,
-    "reweight_tgt_iters": 100,
+    "reweight_tgt_iters": -1,
     "ref_model": null,
     "lr_scheduler_name": "linear_warmup_cosine",
     "lr_end": 1e-4,

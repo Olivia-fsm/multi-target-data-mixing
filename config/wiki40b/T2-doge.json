@@ -1,7 +1,7 @@
 {
-    "dataset": "wiki40b-en-fr-de-es-it-ru-uk-ca-da-ro", 
+    "dataset": "wiki40b-en-fr-de-es-it-ru-pl-uk-nl-pt-ca-tr-da-ro", 
     "train_domains":"en,fr,de,es,it,ru",
-    "tgt_domains":"uk,ca,da,ro",
+    "tgt_domains":"pl,uk,nl,pt,ca,tr,da,ro",
     "max_steps": 20000,
     "train_dw": null,
     "tgt_dw": null,
@@ -23,7 +23,7 @@
     "reweight_train": "doge",
     "reweight_tgt": "map",
     "reweight_train_iters": 100,
-    "reweight_tgt_iters": 100,
+    "reweight_tgt_iters": -1,
     "ref_model": null,
     "lr_scheduler_name": "linear_warmup_cosine",
     "lr_end": 1e-4,

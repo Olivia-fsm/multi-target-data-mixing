@@ -533,7 +533,7 @@ def get_train_eval_datasets(data_config:DataTrainingArguments,
     if max_eval_samples is not None:
         val_dataset_ls = [Dataset.from_generator(take_data_generator, gen_kwargs={'ds': ds, 'max_samples': max_eval_samples}) for ds in val_dataset_ls]
     if 'wiki40b' in data_config.dataset:
-        tokenizer = AutoTokenizer.from_pretrained('/scratch/pagliard/doge/exp/doge_frozen_weights_12l_catalan-mu0001_seed42_10k/checkpoint-10000')
+        tokenizer = AutoTokenizer.from_pretrained("xlm-mlm-100-1280")
     else:
         tokenizer = AutoTokenizer.from_pretrained("gpt2")
         tokenizer.pad_token = tokenizer.eos_token

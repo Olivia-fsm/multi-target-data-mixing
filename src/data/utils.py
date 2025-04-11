@@ -31,22 +31,22 @@ def get_dataset(args, dataset=None) -> Dict[str, np.ndarray]:
     print(f"Loading train dataset '{trg_dataset}'")
 
     if 'wiki40b' in trg_dataset:
-        lang_list = ['en', 'ar', 'zh-cn', 'zh-tw', 'nl', 'fr', 'de', 'it', 'ja', 'ko', 'pl', 'pt', 'ru', 'es', 
+        lang_list = ['en', 'ar', 'zh', 'nl', 'fr', 'de', 'it', 'ja', 'ko', 'pl', 'pt', 'ru', 'es', 
                      'th', 'tr', 'bg', 'ca', 'cs', 'da', 'el', 'et', 'fa', 'fi', 'he', 'hi', 'hr', 'hu', 'id', 
                      'lt', 'lv', 'ms', 'no', 'ro', 'sk', 'sl', 'sr', 'sv', 'tl', 'uk', 'vi']
         subset_list = trg_dataset.split('-')[1:]
         rst_dict = {}
         rst_dict['train'] = {}
         rst_dict['val'] = {}
-        rst_dict['test'] = {}
         for subset in subset_list:
             if subset not in lang_list:
                 continue
+            if subset == "zh":
+                subset = "zh-cn"
             subset_data = get_wiki40b(subset=subset, num_proc=10)
             rst_dict['train'][subset] = subset_data['train']
             rst_dict['val'][subset] = subset_data['val']
-            rst_dict['test'][subset] = subset_data['test']
-            print(f"Subset {subset}: train[{len(subset_data['train'])}]|val[{subset_data['val']}]")
+            print(f"Subset {subset}: train[{len(subset_data['train'])}]|val[{len(subset_data['val'])}]")
         return rst_dict
     
     elif 'slim_6b' in trg_dataset:
@@ -79,17 +79,17 @@ def get_dataset(args, dataset=None) -> Dict[str, np.ndarray]:
         rst_dict = {}
         rst_dict['train'] = {}
         rst_dict['val'] = {}
-        n_items_train = 5000000000
+        n_items_train = 10000000000
         n_items_train_ood = 50000000
         n_items_val = 5000
         
         for k in SUBSET2META.keys():
             subset_data = get_slim_redpajama(subset=k, num_proc=10)
             if k in subset_ood:
-                rst_dict['train'][k] = subset_data['train'][:n_items_train_ood]
+                rst_dict['train'][k] = subset_data['train'][:min(n_items_train,len(subset_data['train']))]
                 rst_dict['val'][k] = subset_data['val'][:n_items_val*args.max_token_length]
             else:
-                rst_dict['train'][k] = subset_data['train'][:n_items_train]
+                rst_dict['train'][k] = subset_data['train']
                 rst_dict['val'][k] = subset_data['val'][:n_items_val*args.max_token_length]
         
         for s in subset_ood:
@@ -100,7 +100,7 @@ def get_dataset(args, dataset=None) -> Dict[str, np.ndarray]:
             except:
                 print(f"Dataset: {s} is not implemented!")
                 continue
-            rst_dict['train'][s] = subset_data['train'][:n_items_train_ood]
+            rst_dict['train'][s] = subset_data['train'][:n_items_train]
             rst_dict['val'][s] = subset_data['val'][:n_items_val*args.max_token_length]
         # print(rst_dict['train'].keys())
         return rst_dict

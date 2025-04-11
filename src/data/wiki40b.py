@@ -31,7 +31,11 @@ def get_wiki40b(subset='en', num_proc=40,
     return {'train': train_data, 'val': test_data}
 
 
-if __name__ == "__main__":
-    da_data = get_wiki40b("en")
-    import pdb
-    pdb.set_trace()
+# if __name__ == "__main__":
+#     en_data = get_wiki40b("en")
+#     da_data = get_wiki40b("da")
+#     ca_data = get_wiki40b("ca")
+#     ja_data = get_wiki40b("ja")
+#     tr_data = get_wiki40b("tr")
+#     import pdb
+#     pdb.set_trace()

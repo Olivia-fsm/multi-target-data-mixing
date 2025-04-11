@@ -886,6 +886,14 @@ class MAPTrainer(Trainer):
                            avg_tgt_dw=self.avg_tgt_dw/self.tgt_dw_update_steps,
                            train_dw_update_steps=self.train_dw_update_steps,
                            tgt_dw_update_steps=self.tgt_dw_update_steps)
+        if (self.state.global_step+1) % self.args.save_steps == 0:
+            self.write_weights(last_train_dw=self.train_dw, 
+                                avg_train_dw=self.avg_train_dw/self.train_dw_update_steps,
+                                last_tgt_dw=self.tgt_dw,
+                                avg_tgt_dw=self.avg_tgt_dw/self.tgt_dw_update_steps,
+                                train_dw_update_steps=self.train_dw_update_steps,
+                                tgt_dw_update_steps=self.tgt_dw_update_steps,
+                                save_path = os.path.join(f"{self.dw_save_path.split('.pkl')[0]}-{str(self.state.global_step)}.pkl"))
         
         self.train_loader.update_weights(new_weights=self.train_dw)
         logger.info("-> update train_dw: ", self.train_dw)
