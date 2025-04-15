@@ -1,20 +1,18 @@
 #!/bin/bash
 
-# Script to run T1-T12 configurations based on command-line arguments
+# Script to run T1-T2 configurations based on command-line arguments
 # Usage: ./script.sh -m method [configuration numbers]
-# Example: ./script.sh -m crisp 1 3 5   # This will run T1-crisp, T3-crisp, and T5-crisp configurations
+# Example: ./script.sh -m crisp 1 2   # This will run T1-crisp, and T2-crisp configurations
 # Supported methods: crisp, regmix, pcgrad
 
-# Common variables
-CONDA_ENV="mtl"  # Your conda environment name
+CONDA_ENV="mtl"  
 GPUS_PER_NODE=2
-PROJECT_DIR="/mloscratch/homes/glarou/DoGE/regmix/multi_doge"
+PROJECT_DIR="<>"
 SRC_DIR="${PROJECT_DIR}/src"
-CONFIG_DIR="/home/glarou/DoGE/regmix/multi_doge/config/ablations-wiki40b"
+CONFIG_DIR="${PROJECT_DIR}/config/ablations-wiki40b"
 WANDB_PROJ="multi-target-reweight"
 
-# Export WANDB API key
-export WANDB_API_KEY="6c14719f84563383b5d2cc3ae226ae81dba0b743"
+export WANDB_API_KEY=<>
 
 # Default method
 METHOD="pcgrad"
@@ -70,7 +68,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Validate all arguments are between 1 and 12
+# Validate all arguments are between 1 and 2
 for arg in "$@"; do
     if ! [[ "$arg" =~ ^[0-2]+$ ]]; then
         echo "Error: Arguments must be numbers between 1 and 2"
@@ -85,7 +83,6 @@ else
     RUN_SCRIPT="run.py"
 fi
 
-# Process each selected configuration
 for config_num in "$@"; do
     # Create the configuration filename and run name
     config_file="T${config_num}-${METHOD}.json"
