@@ -13,9 +13,14 @@ parser = argparse.ArgumentParser(description='Evaluate a model checkpoint on spe
 parser.add_argument('--model_path', required=True, type=str, help='Path to your model checkpoint')
 parser.add_argument('--device', default='cuda:0', type=str, help='Device to use for evaluation')
 parser.add_argument('--batch_size', default=32, type=int, help='Batch size for evaluation')
-parser.add_argument('--tasks', default="gsm8k,hellaswag,logiqa,ai2_arc,piqa,sciq,kodcode", 
+parser.add_argument('--tasks', default="mathqa,bigbio_medqa,ai2_arc,piqa,sciq,hellaswag,logiqa", 
                     type=str, help='Comma-separated list of tasks to evaluate')
 parser.add_argument('--num_fewshot', default=5, type=int, help='Number of few-shot examples to use')
+
+def extract_model_name(model_path):
+    path_parts = model_path.split(os.path.sep)
+    name = "-".join(path_parts[-2].split('-')[0:2])    
+    return name
 
 def parse_metrics(output):
     """
@@ -24,6 +29,7 @@ def parse_metrics(output):
     metrics = {}
     task_results = {}
     
+    # Use regex to extract the task name from the first line
     task_match = re.search(r'=== Evaluating task: ([^\s]+) ===', output)
     current_task = task_match.group(1) if task_match else "unknown"
     
@@ -78,11 +84,21 @@ def parse_metrics(output):
 def main():
     args = parser.parse_args()
     
+    # Extract model name from path
+    model_name = extract_model_name(args.model_path)
+    print(f"Extracted model name: {model_name}")
+    
+    # Create a filename based on the model name
+    results_filename = f"{results_dir}/{model_name}_evaluation_results.md"
+    
+    # Parse tasks
     tasks = args.tasks.split(',')
     
+    # Results storage
     task_results = {}
     all_metrics = {}
     
+    # Evaluate each task
     for task in tasks:
         print(f"\n=== Evaluating task: {task} ===")
         
@@ -94,18 +110,21 @@ def main():
                 "--tasks", task,
                 "--device", args.device,
                 "--batch_size", str(args.batch_size),
-                "--num_fewshot", str(args.num_fewshot)
+                "--num_fewshot", str(args.num_fewshot),
             ],
             capture_output=True, text=True
         )
         
         print("Command executed:", " ".join(result.args))
         
+        # Process output
         output = result.stdout
         print(output)
         
+        # Extract metrics
         metrics, task_result = parse_metrics(output)
         
+        # Store results
         if metrics:
             all_metrics[task] = metrics
             if task_result is not None:
@@ -116,11 +135,13 @@ def main():
         else:
             print(f"No metrics found for {task}")
         
+        # Print all metrics found
         if metrics:
             print(f"All metrics for {task}:")
             for key, value in metrics.items():
                 print(f"  {key}: {value:.4f}")
     
+    # Summarize results
     print("\n=== SUMMARY OF RESULTS ===")
     print("{:<15} {:<10}".format("Task", "Performance"))
     print("-" * 25)
@@ -134,9 +155,11 @@ def main():
         print("-" * 25)
         print("{:<15} {:<10.4f}".format("Average", avg_performance))
     
-    with open(f"{results_dir}/model_evaluation_results.md", "w") as f:
+    # Save results to file with model name in the filename
+    with open(results_filename, "w") as f:
         f.write("# Model Evaluation Results\n\n")
-        f.write(f"Model checkpoint: {args.model_path}\n")
+        f.write(f"Model: {model_name}\n")
+        f.write(f"Checkpoint path: {args.model_path}\n")
         f.write(f"Number of few-shot examples: {args.num_fewshot}\n\n")
         f.write("| Task | Performance |\n")
         f.write("|------|------------|\n")
@@ -160,7 +183,7 @@ def main():
             
             f.write("\n")
     
-    print(f"\nResults saved to {results_dir}/model_evaluation_results_{args.model_path.split('/')[-1]}.md")
+    print(f"\nResults saved to {results_filename}")
 
 if __name__ == "__main__":
     main()
