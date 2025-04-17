@@ -106,11 +106,12 @@ def main():
             [
                 "lm_eval", 
                 "--model", "hf", 
-                "--model_args", f"pretrained={args.model_path}",
+                "--model_args", f"pretrained={args.model_path},trust_remote_code=True",
                 "--tasks", task,
                 "--device", args.device,
                 "--batch_size", str(args.batch_size),
                 "--num_fewshot", str(args.num_fewshot),
+                "--trust_remote_code",
             ],
             capture_output=True, text=True
         )
