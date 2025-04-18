@@ -4,7 +4,8 @@ import json
 import os
 import numpy as np
 
-def setup_environment(base_dir="/mloscratch/homes/glarou"):
+def setup_environment(base_dir="/mloscratch/homes/<>"):
+    
     env_vars = {
         "HF_DATASETS_CACHE": f"{base_dir}/hf_datasets_cache",
         "HF_HOME": f"{base_dir}/hf_home",
@@ -13,10 +14,17 @@ def setup_environment(base_dir="/mloscratch/homes/glarou"):
     for key, path in env_vars.items():
         os.environ[key] = path
         os.makedirs(path, exist_ok=True)
+    
+    os.makedirs(f"{base_dir}/hf_datasets_downloads", exist_ok=True)
+
+    import datasets
+    datasets.config.HF_DATASETS_CACHE = env_vars["HF_DATASETS_CACHE"]
+    datasets.config.DEFAULT_DOWNLOAD_FOLDER = f"{base_dir}/hf_datasets_downloads"
 
     return env_vars
 
-env_vars = setup_environment()
+# NOTE: if errors with permissions, uncomment
+# env_vars = setup_environment()
 
 from lm_eval import simple_evaluate
 from lm_eval.tasks import TaskManager
