@@ -4,7 +4,7 @@ set -euo pipefail
 methods=(REGMIX PCGRAD CRISP)
 ablations=(T10 T9)
 
-base=<> # <- folder path of evaluation_model.py here
+base=<>
 mkdir -p results/raw
 
 for ablation in "${ablations[@]}"; do
@@ -18,10 +18,11 @@ for ablation in "${ablations[@]}"; do
       echo "No experiment dir for ${method}-${ablation}" >&2
       continue
     fi
-    suffix=${dir##*/}             # e.g. REGMIX-T10-dw[0]-tw[0]-scheduler[cosine]
+    suffix=${dir##*/}             
     model_path="$base/$suffix/checkpoint-20000"
 
-    python evaluate_model.py --model_path "$model_path" 
+    python evaluate_model.py --model_path "$model_path" --num_fewshot 0 --output_dir "evaluation_results/0_shot"
+    python evaluate_model.py --model_path "$model_path" --num_fewshot 5 --output_dir "evaluation_results/5_shot"
 
   done
 done
