@@ -87,13 +87,13 @@ def parse_args():
     return p.parse_args()
 
 def extract_accuracy_metrics(results):
-    """Extract just the accuracy metrics from results"""
+    """Extract just the accuracy (acc_norm) from results"""
     accuracy_results = {}
     for task, metrics in results["results"].items():
         accuracy_results[task] = {
             metric.replace(",none", ""): value 
             for metric, value in metrics.items() 
-            if "acc" in metric
+            if "acc_norm" in metric #NOTE: if we want acc as well replace "acc_norm" with "acc"
         }
     return accuracy_results
 
