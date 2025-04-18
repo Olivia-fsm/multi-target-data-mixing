@@ -5,8 +5,6 @@ import os
 import numpy as np
 
 def setup_environment(base_dir="/mloscratch/homes/glarou"):
-    """Set up all required environment variables and directories in one place"""
-    # Define paths
     env_vars = {
         "HF_DATASETS_CACHE": f"{base_dir}/hf_datasets_cache",
         "HF_HOME": f"{base_dir}/hf_home",
@@ -20,7 +18,6 @@ def setup_environment(base_dir="/mloscratch/homes/glarou"):
 
 env_vars = setup_environment()
 
-# Now import lm_eval modules
 from lm_eval import simple_evaluate
 from lm_eval.tasks import TaskManager
 from lm_eval.models.huggingface import HFLM
