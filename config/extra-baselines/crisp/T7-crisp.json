@@ -3,7 +3,7 @@
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,kodcode,hellaswag",
     "max_steps": 20000,
-    "train_dw": "0.034310590833144,0.005776167592689453,0.013086661265156932,0.0014022511358980545,0.5017668225949395,0.4199453461530261,0.02371216042514603",
+    "train_dw": "0.0343,0.0058,0.0131,0.0014,0.5018,0.4199,0.0237",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

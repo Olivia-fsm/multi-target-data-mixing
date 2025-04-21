@@ -3,7 +3,7 @@
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,piqa",
     "max_steps": 20000,
-    "train_dw": "0.033201889576929544,0.0073400793981420135,0.010966939932928391,0.000786003160868664,0.6035349005233045,0.30919602149686254,0.03497416591096444",
+    "train_dw": "0.0332,0.0073,0.0110,0.0008,0.6035,0.3092,0.0350",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

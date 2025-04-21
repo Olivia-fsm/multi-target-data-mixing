@@ -3,7 +3,7 @@
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "medqa,mathqa,hellaswag,logiqa",
     "max_steps": 20000,
-    "train_dw": "0.005496726948532554,0.049748132667754096,0.09164826163047594,0.04909475235639894,0.5804069636404569,0.2191472441900786,0.0044579185663030695",
+    "train_dw": "0.0055,0.0497,0.0916,0.0491,0.5805,0.2191,0.0045",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

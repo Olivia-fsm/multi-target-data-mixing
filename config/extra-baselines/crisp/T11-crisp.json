@@ -3,7 +3,7 @@
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "arc_easy,arc_challenge,medqa,mathqa",
     "max_steps": 20000,
-    "train_dw": "0.002214903070904873,0.006515284576406799,0.004724697090468127,0.001427683299337514,0.7393536290702867,0.242974210737415,0.0027895921551809944",
+    "train_dw": "0.0022,0.0065,0.0047,0.0014,0.7394,0.2430,0.0028",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

@@ -3,7 +3,7 @@
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,kodcode,arc_easy,arc_challenge",
     "max_steps": 20000,
-    "train_dw": "0.026705403997432032,0.005864835793175399,0.005391249829600125,0.0011217764297629552,0.569134618868417,0.3729292786622664,0.018852836419346142",
+    "train_dw": "0.0267,0.0059,0.0054,0.0011,0.5691,0.3729,0.0189",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,
