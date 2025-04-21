@@ -15,7 +15,7 @@
     "model_type": "gpt2",
     "config_overrides": "n_positions=512,n_embd=768,n_layer=12,n_head=12",
     "run_name": "CRISP-125M",
-    "output_dir": "/mloscratch/homes/glarou/DoGE/regmix/multi_doge/exp",
+    "output_dir": "<>",
     "do_train": true,
     "do_eval": true,
     "do_predict": false,
