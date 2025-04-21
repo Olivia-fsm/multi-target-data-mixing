@@ -1,7 +1,7 @@
 {
-  "dataset": "slim_ood-gsm8k-sciq-arc_easy-arc_challenge-hellaswag-piqa-logiqa-kodcode",
+  "dataset": "slim_ood-gsm8k-sciq-arc_easy-arc_challenge-hellaswag-piqa-logiqa-medqa-mathqa-kodcode",
   "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
-  "tgt_domains": "gsm8k,sciq,arc_easy,arc_challenge,hellaswag,piqa,logiqa,kodcode",
+  "tgt_domains": "gsm8k,sciq,arc_easy,arc_challenge,hellaswag,piqa,logiqa,medqa,mathqa,kodcode",
   "max_steps": 20000,
   "train_dw": "0.01,0.00,0.05,0.93,0.00,0.00,0.00",
   "tgt_dw": null,
