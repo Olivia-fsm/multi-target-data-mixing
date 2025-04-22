@@ -1,12 +1,10 @@
-# Model Evaluation Tool
-
-A simple framework for evaluating multi-task learning methods across different ablation studies.
+# Model Evaluation 
 
 ## What this does
 
 - Evaluates models trained with different methods (REGMIX, PCGRAD, CRISP)
 - Runs 0-shot and 5-shot evaluations
-- Generates comprehensive comparison reports
+- Generates comparison reports
 - Shows which method performs best for each task and ablation
 
 ## Usage
