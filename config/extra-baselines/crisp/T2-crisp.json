@@ -1,9 +1,9 @@
 {
-    "dataset": "slim_ood-gsm8k-hellaswag",
+    "dataset": "redpj-gsm8k-hellaswag",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,hellaswag",
     "max_steps": 20000,
-    "train_dw": "0.0330,0.0068,0.0196,0.0020,0.6085,0.2947,0.0354",
+    "train_dw": "0.073,0.022,0.0314,0.0087,0.5113,0.3535,0.0001",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

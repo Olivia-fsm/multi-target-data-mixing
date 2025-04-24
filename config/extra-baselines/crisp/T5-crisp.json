@@ -1,9 +1,9 @@
 {
-    "dataset": "slim_ood-gsm8k-sciq",
+    "dataset": "redpj-gsm8k-sciq",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,sciq",
     "max_steps": 20000,
-    "train_dw": "0.0394,0.0419,0.0411,0.0328,0.5304,0.2752,0.0392",
+    "train_dw": "0.0826,0.0509,0.038,0.0238,0.4366,0.3643,0.0039",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,
