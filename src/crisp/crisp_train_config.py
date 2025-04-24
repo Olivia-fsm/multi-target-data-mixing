@@ -18,13 +18,14 @@ all_metrics = {
 }
 
 dataset_subsets = {
-    'slimpajama': ["arxiv", "book", "c4", "cc", "github", "stackexchange", "wikipedia"],
+    'redpj': ["arxiv", "book", "c4", "cc", "github", "stackexchange", "wikipedia"],
+    'climblab': [f"cluster_{i}" for i in range(1, 21)],
     'wiki40b': ["en", "fr", "de", "es", "it", "ru"]
 }
 
 # Define ablation configurations
 ablation_configs = {
-    'slimpajama':{
+    'redpj':{
         'T1': {
             'name': 'gsm8k+arc_easy+arc_challenge',
             'metrics': ['gsm8k', 'arc_easy', 'arc_challenge']
@@ -83,7 +84,57 @@ ablation_configs = {
             'name': 'pl+uk+nl+pt+ca+tr+da+ro',
             'metrics': ['pl', 'uk', 'nl', 'pt', 'ca', 'tr', 'da', 'ro']
         },
-    }
+    },
+    "climblab": {
+        'T1': {
+            'name': 'gsm8k+arc_easy+arc_challenge',
+            'metrics': ['gsm8k', 'arc_easy', 'arc_challenge']
+        },
+        'T2': {
+            'name': 'gsm8k+hellaswag',
+            'metrics': ['gsm8k', 'hellaswag']
+        },
+        'T3': {
+            'name': 'gsm8k+piqa',
+            'metrics': ['gsm8k', 'piqa']
+        },
+        'T4': {
+            'name': 'gsm8k+logiqa',
+            'metrics': ['gsm8k', 'logiqa']
+        },
+        'T5': {
+            'name': 'gsm8k+sciq',
+            'metrics': ['gsm8k', 'sciq']
+        },
+        'T6': {
+            'name': 'gsm8k+kodcode+arc_easy+arc_challenge',
+            'metrics': ['gsm8k', 'kodcode', 'arc_easy', 'arc_challenge']
+        },
+        'T7': {
+            'name': 'gsm8k+kodcode+hellaswag',
+            'metrics': ['gsm8k', 'kodcode', 'hellaswag']
+        },
+        'T8': {
+            'name': 'all_tasks',
+            'metrics': list(all_metrics.keys())
+        },
+        'T9': {
+            'name': '6_tasks_without_kodcode_gsm8k',
+            'metrics': ['sciq', 'arc_easy', 'arc_challenge', 'hellaswag', 'piqa', 'logiqa']
+        },
+        'T10': {
+            'name': 'reasoning + mathqa + medqa',
+            'metrics': ['sciq', 'arc_easy', 'arc_challenge', 'hellaswag', 'piqa', 'logiqa', 'mathqa', 'medqa']
+        },
+        'T11': {
+            'name': 'arc + mathqa',
+            'metrics': ['arc_easy', 'arc_challenge', 'medqa', 'mathqa']
+        },
+        'T12': {
+            'name': 'hellaswag + logiqa + medqa + mathqa',
+            'metrics': ['medqa', 'mathqa', 'hellaswag', 'logiqa']
+        },
+    },
 }
 
 def load_weights(weights_file):
@@ -110,7 +161,7 @@ def process_domain_weights(weights_file, config, dataset):
             return None
         
         domains_to_process = config.get('metrics', [])
-        train_domains = dataset_subsets.get(dataset, dataset_subsets['slimpajama'])
+        train_domains = dataset_subsets[dataset]
         
         # Sum weights for each domain
         summed_weights = {domain: 0.0 for domain in train_domains}
@@ -130,7 +181,9 @@ def process_domain_weights(weights_file, config, dataset):
             
             if total_weight > 0:
                 normalized_weights = {domain: weight / total_weight for domain, weight in averaged_weights.items()}
-                weights_str = ",".join([str(normalized_weights[domain]) for domain in train_domains])
+                # normalize, round to 4 decimal places and convert to string
+                weights_str = ",".join([str(round(normalized_weights[domain], 4)) for domain in train_domains])
+                # weights_str = ",".join([str(normalized_weights[domain]) for domain in train_domains])
                 return weights_str
         
         return None
@@ -139,11 +192,14 @@ def process_domain_weights(weights_file, config, dataset):
 
 def generate_training_config(config_id, config, weights_file, dataset):
     """Generate training configuration for a specific ablation setting"""
-    train_domains = dataset_subsets.get(dataset, dataset_subsets['slimpajama'])
+    train_domains = dataset_subsets[dataset]
     train_dw = process_domain_weights(weights_file, config, dataset)
-    
+    if dataset == "redpj" or "slimpajama":
+        dataset_name = "slim_ood"
+    else:
+        dataset_name = dataset
     json_config = {
-        "dataset": f"{dataset}-{'-'.join(config['metrics'])}" if dataset == 'slimpajama' else f"{dataset}-{'-'.join(config['metrics'])}-{'-'.join(train_domains)}",
+        "dataset": f"{dataset_name}-{'-'.join(config['metrics'])}" if (dataset == 'redpj' or  dataset == 'climblab') else f"{dataset}-{'-'.join(config['metrics'])}-{'-'.join(train_domains)}",
         "train_domains": ",".join(train_domains),
         "tgt_domains": ','.join(config['metrics']),
         "max_steps": 20000,
@@ -194,7 +250,7 @@ def generate_training_config(config_id, config, weights_file, dataset):
     
     return json_config
 
-def main(dataset='slimpajama', weights_dir="./crisp_results"):
+def main(dataset='redpj', weights_dir="./crisp_results"):
     dataset_weights_dir = os.path.join(weights_dir, dataset)
     weights_file = os.path.join(dataset_weights_dir, "specialist_subset_distributions_k1_5_k2_5.json")
     output_dir = os.path.join(dataset_weights_dir, "configs")
@@ -215,8 +271,8 @@ def main(dataset='slimpajama', weights_dir="./crisp_results"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate training configurations')
-    parser.add_argument('--dataset', type=str, default='slimpajama',
-                        help='Dataset to use (slimpajama or wiki40b)')
+    parser.add_argument('--dataset', type=str, default='climblab',
+                        help='Dataset to use (redpj or wiki40b or climblab)')
     parser.add_argument('--weights_dir', type=str, default="./crisp_results",
                         help='Base directory containing weight files')
     
