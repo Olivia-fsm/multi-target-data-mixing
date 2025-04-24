@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-gsm8k-arc_easy-arc_challenge",
+    "dataset": "slimpajama-gsm8k-arc_easy-arc_challenge",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,arc_easy,arc_challenge",
     "max_steps": 20000,

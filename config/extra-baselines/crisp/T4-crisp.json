@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-gsm8k-logiqa",
+    "dataset": "slimpajama-gsm8k-logiqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,logiqa",
     "max_steps": 20000,

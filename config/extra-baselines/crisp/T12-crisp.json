@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-medqa-mathqa-hellaswag-logiqa",
+    "dataset": "slimpajama-medqa-mathqa-hellaswag-logiqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "medqa,mathqa,hellaswag,logiqa",
     "max_steps": 20000,

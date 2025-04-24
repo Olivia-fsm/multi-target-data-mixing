@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-arc_easy-arc_challenge-medqa-mathqa",
+    "dataset": "slimpajama-arc_easy-arc_challenge-medqa-mathqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "arc_easy,arc_challenge,medqa,mathqa",
     "max_steps": 20000,

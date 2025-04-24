@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-gsm8k-kodcode-hellaswag",
+    "dataset": "slimpajama-gsm8k-kodcode-hellaswag",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,kodcode,hellaswag",
     "max_steps": 20000,

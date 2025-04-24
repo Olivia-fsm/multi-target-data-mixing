@@ -1,5 +1,5 @@
 {
-    "dataset": "redpj-sciq-arc_easy-arc_challenge-hellaswag-piqa-logiqa",
+    "dataset": "slimpajama-sciq-arc_easy-arc_challenge-hellaswag-piqa-logiqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "sciq,arc_easy,arc_challenge,hellaswag,piqa,logiqa",
     "max_steps": 20000,
