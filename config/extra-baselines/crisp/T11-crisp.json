@@ -1,9 +1,9 @@
 {
-    "dataset": "slimpajama-arc_easy-arc_challenge-medqa-mathqa",
+    "dataset": "slim_ood-arc_easy-arc_challenge-medqa-mathqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "arc_easy,arc_challenge,medqa,mathqa",
     "max_steps": 20000,
-    "train_dw": "0.0322,0.0383,0.0594,0.0387,0.5547,0.2729,0.0038",
+    "train_dw": "0.0264,0.047,0.0563,0.0371,0.501,0.3179,0.0142",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

@@ -1,9 +1,9 @@
 {
-    "dataset": "slimpajama-gsm8k-piqa",
+    "dataset": "slim_ood-gsm8k-piqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,piqa",
     "max_steps": 20000,
-    "train_dw": "0.0723,0.0199,0.0179,0.0056,0.5419,0.3423,0.0001",
+    "train_dw": "0.0658,0.0312,0.0199,0.003,0.5134,0.3657,0.0009",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

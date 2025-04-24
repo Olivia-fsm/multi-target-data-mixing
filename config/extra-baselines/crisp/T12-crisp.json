@@ -1,9 +1,9 @@
 {
-    "dataset": "slimpajama-medqa-mathqa-hellaswag-logiqa",
+    "dataset": "slim_ood-medqa-mathqa-hellaswag-logiqa",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "medqa,mathqa,hellaswag,logiqa",
     "max_steps": 20000,
-    "train_dw": "0.0265,0.067,0.1142,0.0715,0.4385,0.2778,0.0046",
+    "train_dw": "0.0216,0.0736,0.1148,0.0736,0.4039,0.2962,0.0162",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

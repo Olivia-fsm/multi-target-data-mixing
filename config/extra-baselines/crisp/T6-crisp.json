@@ -1,9 +1,9 @@
 {
-    "dataset": "slimpajama-gsm8k-kodcode-arc_easy-arc_challenge",
+    "dataset": "slim_ood-gsm8k-kodcode-arc_easy-arc_challenge",
     "train_domains": "arxiv,book,c4,cc,github,stackexchange,wikipedia",
     "tgt_domains": "gsm8k,kodcode,arc_easy,arc_challenge",
     "max_steps": 20000,
-    "train_dw": "0.0919,0.0414,0.0156,0.0142,0.5147,0.3159,0.0063",
+    "train_dw": "0.076,0.0404,0.0104,0.0039,0.4854,0.3759,0.0081",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,
