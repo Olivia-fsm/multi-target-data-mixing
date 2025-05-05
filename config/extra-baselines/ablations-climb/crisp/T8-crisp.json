@@ -3,7 +3,7 @@
     "train_domains": "cluster_1,cluster_2,cluster_3,cluster_4,cluster_5,cluster_6,cluster_7,cluster_8,cluster_9,cluster_10,cluster_11,cluster_12,cluster_13,cluster_14,cluster_15,cluster_16,cluster_17,cluster_18,cluster_19,cluster_20",
     "tgt_domains": "gsm8k,arc_easy,arc_challenge,hellaswag,piqa,sciq,kodcode,logiqa,mathqa,medqa",
     "max_steps": 20000,
-    "train_dw": "0.0649,0.0142,0.0018,0.0735,0.0211,0.1159,0.0217,0.0309,0.0873,0.0439,0.2599,0.0702,0.0016,0.0034,0.0178,0.0382,0.0487,0.007,0.0747,0.0034",
+    "train_dw": "0.0649,0.0143,0.0018,0.0729,0.0211,0.1161,0.0217,0.0303,0.0875,0.0439,0.2601,0.0703,0.0016,0.0034,0.0179,0.0384,0.0488,0.007,0.0746,0.0034",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,

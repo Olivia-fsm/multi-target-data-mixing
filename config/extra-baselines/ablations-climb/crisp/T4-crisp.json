@@ -3,7 +3,7 @@
     "train_domains": "cluster_1,cluster_2,cluster_3,cluster_4,cluster_5,cluster_6,cluster_7,cluster_8,cluster_9,cluster_10,cluster_11,cluster_12,cluster_13,cluster_14,cluster_15,cluster_16,cluster_17,cluster_18,cluster_19,cluster_20",
     "tgt_domains": "gsm8k,logiqa",
     "max_steps": 20000,
-    "train_dw": "0.1813,0.0398,0.0067,0.0771,0.0667,0.0469,0.0151,0.0377,0.037,0.022,0.2169,0.0326,0.0031,0.0066,0.0205,0.0296,0.0119,0.0162,0.121,0.0115",
+    "train_dw": "0.1814,0.04,0.0067,0.0766,0.0668,0.0469,0.0151,0.037,0.0371,0.0221,0.2171,0.0327,0.0031,0.0066,0.0206,0.0297,0.0119,0.0162,0.1211,0.0115",
     "tgt_dw": null,
     "val_dw": null,
     "max_train_samples": null,
